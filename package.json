@@ -7,9 +7,9 @@
   "scripts": {
     "test": "mocha \"src/test/**/*.spec.js\" --exit -t 10000",
     "clean": "rimraf \"*.js\" \"*.js.map\" \"*.d.ts\" \"src/**/*.js*\" \"src/**/*.d.ts\" \"provider/**/*.js*\" \"provider/**/*.d.ts\"",
-    "prebuild": "npm clean",
+    "prebuild": "npm run clean",
     "build": "tsc",
-    "prepublishOnly": "npm run clean && npm build && npm test",
+    "prepublishOnly": "npm run clean && npm run build && npm run test",
     "up": "docker-compose up -d",
     "down": "docker-compose down"
   },
