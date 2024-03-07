@@ -77,6 +77,10 @@ export function createProvider<E extends Event>(opts: Options): Provider<E> {
 
       return result.map(mapToEvent)
     },
+    // @ts-ignore
+    markEvent(stream: string | string[], aggregateId: string, position: any): Promise<void> {
+      throw Error('not implemented')
+    },
     createEvents: createEventsMapper<E>(0),
     append: async (_stream, _aggregateId, _version, newEvents) => {
       try {
@@ -169,5 +173,6 @@ function mapToEvent<E extends Event = any>(row: any): StoreEvent<E> {
     stream: row.stream,
     timestamp: row.timestamp,
     version: row.version,
+    processed: row.processed
   }
 }

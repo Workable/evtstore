@@ -48,11 +48,19 @@ export function createProvider<E extends Event>(opts: Options): Provider<E> {
         .events()
         .select()
         .where({ stream, aggregate_id: aggregateId })
-        .orderBy('version', 'asc')
+        .orderBy('version', 'asc');
 
-      if (fromPosition !== undefined) {
-        query.andWhere('position', '>', fromPosition)
-      }
+      const handleOutOfOrderEvents =
+        (process.env.HANDLE_OUT_OF_ORDER_EVENTS || 'no') === 'yes';
+      query.where(builder => {
+        if (fromPosition !== undefined) {
+          builder.where('position', '>', fromPosition)
+          if (handleOutOfOrderEvents)
+            builder.orWhere({ processed: false })
+        } else if (handleOutOfOrderEvents) {
+          builder.where({ processed: false })
+        }
+      })
 
       const rows = await query
       return rows.map(mapToEvent)
@@ -74,11 +82,17 @@ export function createProvider<E extends Event>(opts: Options): Provider<E> {
     },
     getEventsFrom: async (stream, position, lim) => {
       const limit = lim ?? opts.limit
+      const handleOutOfOrderEvents =
+        (process.env.HANDLE_OUT_OF_ORDER_EVENTS || 'no') === 'yes';
       const query = opts
         .events()
         .select()
         .whereIn('stream', toArray(stream))
-        .andWhere('position', '>', position)
+        .where(builder => {
+          builder.where('position', '>', position);
+          if (handleOutOfOrderEvents)
+            builder.orWhere({ processed: false })
+        })
         .orderBy('position', 'asc')
 
       if (limit) query.limit(limit)
@@ -86,6 +100,12 @@ export function createProvider<E extends Event>(opts: Options): Provider<E> {
       const events = await query
 
       return events.map(mapToEvent)
+    },
+    markEvent: async (stream, aggregateId, position) => {
+      await opts.events()
+        .update({ processed: true })
+        .whereIn('stream', toArray(stream))
+        .where({  aggregate_id: aggregateId, position });
     },
     createEvents: createEventsMapper<E>(0),
     append: async (_stream, _aggregateId, _version, newEvents, trx) => {
@@ -97,14 +117,13 @@ export function createProvider<E extends Event>(opts: Options): Provider<E> {
           version: storeEvent.version,
           timestamp: storeEvent.timestamp,
         }))
-        let results;
-        if (trx){
-          results = await opts.events().insert(toInsert, ['position']).transacting(trx)
-        } else {
-          results = await opts.events().insert(toInsert, ['position'])
+        const query = opts.events().insert(toInsert, ['position']);
+        if (trx) {
+          query.transacting(trx);
         }
 
         let index = 0
+        const results = await query;
         for (const result of results) {
           newEvents[index].position = result
           index++
@@ -133,6 +152,7 @@ export async function migrate(opts: MigrateOptions) {
           tbl.string('aggregate_id')
           tbl.dateTime('timestamp')
           tbl.text('event')
+          tbl.boolean('processed').defaultTo(false)
         })
         const q2 = trx.schema.table(opts.events, (tbl) => {
           tbl.unique(['stream', 'position'])
@@ -167,5 +187,6 @@ function mapToEvent<E extends Event>(row: any): StoreEvent<E> {
     stream: row.stream,
     timestamp: row.timestamp,
     version: row.version,
+    processed: row.processed
   }
 }

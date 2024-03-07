@@ -42,6 +42,7 @@ export type EventMeta = {
   version: number
   timestamp: Date
   aggregateId: string
+  processed: boolean
 }
 
 export type ErrorCallback = (
@@ -80,6 +81,11 @@ export type Provider<Evt extends Event> = {
     stream: string | string[],
     aggregateId?: string
   ): Promise<StoreEvent<Evt & { __persisted?: any }> | undefined>
+  markEvent(
+    stream: string | string[],
+    aggregateId: string,
+    position: any
+  ): Promise<void>
   createEvents(
     stream: string,
     aggregateId: string,

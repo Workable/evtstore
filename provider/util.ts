@@ -19,6 +19,7 @@ export function createEventsMapper<E extends Event>(position: any) {
       timestamp: new Date(Date.now()),
       event,
       aggregateId,
+      processed: false
     }))
 
     return storeEvents

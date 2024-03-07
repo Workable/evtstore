@@ -7,6 +7,7 @@ export function toMeta(ev: StoreEvent<any>): EventMeta {
     stream: ev.stream,
     timestamp: new Date(ev.timestamp),
     version: ev.version,
+    processed: ev.processed
   }
 }
 

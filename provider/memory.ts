@@ -71,6 +71,10 @@ export function createProvider<E extends Event>(
     getEventsFor,
     getEventsFrom,
     getLastEventFor,
+    // @ts-ignore
+    markEvent(stream: string | string[], aggregateId: string, position: any): Promise<void> {
+      throw Error('not implemented')
+    },
     createEvents,
     append,
   }

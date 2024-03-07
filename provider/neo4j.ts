@@ -75,6 +75,7 @@ export function createProvider<E extends Event>(opts: Options): Provider<E> {
         timestamp: new Date(ev.timestamp),
         aggregateId: ev.aggregateId,
         event: JSON.parse(ev.event),
+        processed: ev.processed
       }))
 
       return parsed
@@ -101,6 +102,7 @@ export function createProvider<E extends Event>(opts: Options): Provider<E> {
         timestamp: new Date(ev.timestamp),
         aggregateId: ev.aggregateId,
         event: JSON.parse(ev.event),
+        processed: ev.processed
       }))
 
       return parsed[0]
@@ -124,9 +126,14 @@ export function createProvider<E extends Event>(opts: Options): Provider<E> {
         timestamp: new Date(ev.timestamp),
         aggregateId: ev.aggregateId,
         event: JSON.parse(ev.event),
+        processed: ev.processed
       }))
 
       return parsed
+    },
+    // @ts-ignore
+    markEvent(stream: string | string[], aggregateId: string, position: any): Promise<void> {
+      throw Error('not implemented')
     },
     createEvents: createEventsMapper<E>(0),
     append: async (stream, id, _version, newEvents) => {

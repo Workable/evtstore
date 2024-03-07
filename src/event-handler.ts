@@ -114,11 +114,17 @@ export class EventHandler<E extends Event> implements Handler<E> {
     for (const event of events) {
       const handler = this.__handlers[event.event.type]
       if (handler) {
-        await Promise.resolve(handler(event.aggregateId, event.event, toMeta(event))).catch(onError)
+        await Promise.resolve(
+          handler(event.aggregateId, event.event, toMeta(event))
+        ).catch(onError)
+        await this.provider.markEvent(this.streams, event.aggregateId, event.position);
         eventsHandled++
       }
-      this.position = event.position
-      await this.setPosition()
+
+      if (BigInt(this.position) < BigInt(event.position)) {
+        this.position = event.position
+        await this.setPosition()
+      }
     }
 
     if (this.hooks.postRun) {

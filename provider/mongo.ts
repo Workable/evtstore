@@ -75,7 +75,10 @@ export function createProvider<E extends Event>(opts: Options<E>): Provider<E> {
 
         return query.toArray()
       }),
-
+    // @ts-ignore
+    markEvent(stream: string | string[], aggregateId: string, position: any): Promise<void> {
+      throw Error('not implemented')
+    },
     createEvents,
 
     append: async (_stream, _aggId, _version, newEvents) => {
