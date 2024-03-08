@@ -103,7 +103,7 @@ export function createProvider<E extends Event>(opts: Options): Provider<E> {
     },
     // @ts-ignore
     markEvent(stream: string | string[], aggregateId: string, position: any): Promise<void> {
-      throw Error('not implemented')
+      // not-implemented
     },
     createEvents: createEventsMapper<E>(0),
     append: async (_stream, _aggregateId, _version, newEvents) => {
