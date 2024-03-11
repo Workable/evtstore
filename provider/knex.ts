@@ -52,15 +52,17 @@ export function createProvider<E extends Event>(opts: Options): Provider<E> {
 
       const handleOutOfOrderEvents =
         (process.env.HANDLE_OUT_OF_ORDER_EVENTS || 'no') === 'yes';
-      query.where(builder => {
-        if (fromPosition !== undefined) {
-          builder.where('position', '>', fromPosition)
-          if (handleOutOfOrderEvents)
-            builder.orWhere({ processed: false })
-        } else if (handleOutOfOrderEvents) {
-          builder.where({ processed: false })
-        }
-      })
+      if (handleOutOfOrderEvents || fromPosition !== undefined) {
+        query.where(builder => {
+          if (fromPosition !== undefined) {
+            builder.where('position', '>', fromPosition)
+            if (handleOutOfOrderEvents)
+              builder.orWhere({processed: false})
+          } else if (handleOutOfOrderEvents) {
+            builder.where({processed: false})
+          }
+        })
+      }
 
       const rows = await query
       return rows.map(mapToEvent)
