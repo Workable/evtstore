@@ -37,10 +37,14 @@ export function createCommands<E extends Event, A extends Aggregate, C extends C
       const provider = await provided.provider
       let nextVersion = aggregate.version + 1
 
-      const lastEvent = await provider.getLastEventFor(provided.stream, id);
-      const lastVersion = (lastEvent?.version || 0) + 1;
-      if (nextVersion < lastVersion)
-        nextVersion = lastVersion;
+      const handleOutOfOrderEvents =
+        (process.env.HANDLE_OUT_OF_ORDER_EVENTS || 'no') === 'yes';
+      if (handleOutOfOrderEvents) {
+        const lastEvent = await provider.getLastEventFor(provided.stream, id);
+        const lastVersion = (lastEvent?.version || 0) + 1;
+        if (nextVersion < lastVersion)
+          nextVersion = lastVersion;
+      }
 
       const newEvents = patchEvents<E, A>(
         provided,
