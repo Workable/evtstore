@@ -1,5 +1,5 @@
 {
-  "name": "evtstore",
+  "name": "@workable/evtstore",
   "version": "12.0.4",
   "description": "Event Sourcing with Node.JS",
   "types": "index.d.ts",
@@ -47,5 +47,8 @@
     "rimraf": "^3.0.0",
     "sqlite3": "^5.1.4",
     "typescript": "^4.9.4"
+  },
+  "publishConfig": {
+    "registry": "https://us-east4-npm.pkg.dev/staging-artifacts-786a/npm-local/"
   }
 }
