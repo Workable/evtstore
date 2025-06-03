@@ -91,9 +91,10 @@ export function createProvider<E extends Event>(opts: Options): Provider<E> {
         .select()
         .whereIn('stream', toArray(stream))
         .where(builder => {
-          builder.where('position', '>', position);
           if (handleOutOfOrderEvents)
-            builder.orWhere({ processed: false })
+            builder.where({ processed: false });
+          else
+            builder.where('position', '>', position);
         })
         .orderBy('position', 'asc')
 
