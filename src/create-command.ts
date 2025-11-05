@@ -40,7 +40,7 @@ export function createCommands<E extends Event, A extends Aggregate, C extends C
       const handleOutOfOrderEvents =
         (process.env.HANDLE_OUT_OF_ORDER_EVENTS || 'no') === 'yes';
       if (handleOutOfOrderEvents) {
-        const lastEvent = await provider.getLastEventFor(provided.stream, id);
+        const lastEvent = await provider.getLastEventFor(provided.stream, id, trx);
         const lastVersion = (lastEvent?.version || 0) + 1;
         if (nextVersion < lastVersion)
           nextVersion = lastVersion;

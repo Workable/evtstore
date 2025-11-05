@@ -79,7 +79,8 @@ export type Provider<Evt extends Event> = {
   ): Promise<Array<StoreEvent<Evt>>>
   getLastEventFor(
     stream: string | string[],
-    aggregateId?: string
+    aggregateId?: string,
+    trx?: Knex.Transaction
   ): Promise<StoreEvent<Evt & { __persisted?: any }> | undefined>
   markEvent(
     stream: string | string[],
