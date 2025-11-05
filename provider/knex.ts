@@ -67,7 +67,7 @@ export function createProvider<E extends Event>(opts: Options): Provider<E> {
       const rows = await query
       return rows.map(mapToEvent)
     },
-    getLastEventFor: async (stream, aggregateId) => {
+    getLastEventFor: async (stream, aggregateId, trx) => {
       let query = opts
         .events()
         .select()
@@ -77,6 +77,10 @@ export function createProvider<E extends Event>(opts: Options): Provider<E> {
 
       if (aggregateId) {
         query = query.andWhere({ aggregate_id: aggregateId })
+      }
+
+      if (trx) {
+        query.transacting(trx);
       }
 
       const rows = await query
