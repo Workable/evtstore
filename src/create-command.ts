@@ -20,7 +20,7 @@ export function createCommands<E extends Event, A extends Aggregate, C extends C
 
   for (const command of commands) {
     wrapped[command] = async (id, body) => {
-      const agg = await provided.getAggregate(id)
+      const agg = await provided.getAggregate(id, trx)
 
       const cmdResult = await handler[command]({ ...body, aggregateId: id, type: command }, agg)
       const nextAggregate = await handleCommandResult(cmdResult, agg, trx)

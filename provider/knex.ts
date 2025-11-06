@@ -43,12 +43,16 @@ export function createProvider<E extends Event>(opts: Options): Provider<E> {
         await opts.bookmarks().insert({ bookmark: bm, position: pos })
       }
     },
-    getEventsFor: async (stream, aggregateId, fromPosition) => {
+    getEventsFor: async (stream, aggregateId, fromPosition, trx) => {
       const query = opts
         .events()
         .select()
         .where({ stream, aggregate_id: aggregateId })
         .orderBy('version', 'asc');
+
+      if (trx) {
+        query.transacting(trx)
+      }
 
       const handleOutOfOrderEvents =
         (process.env.HANDLE_OUT_OF_ORDER_EVENTS || 'no') === 'yes';

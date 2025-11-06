@@ -9,6 +9,7 @@ import {
   ProvidedAggregate,
   Provider,
 } from './types'
+import { Knex } from 'knex'
 
 type AggOpts<E extends Event, A extends Aggregate, S extends string> = {
   stream: S
@@ -38,12 +39,12 @@ export function createProvidedAggregate<E extends Event, A extends Aggregate>(
 ): ProvidedAggregate<E, A> {
   const aggregateCache = new Map<string, { aggregate: A & BaseAggregate; position: any }>()
 
-  async function getAggregate(id: string): Promise<A & BaseAggregate> {
+  async function getAggregate(id: string, trx?: Knex.Transaction): Promise<A & BaseAggregate> {
     const provider = await opts.provider
 
     const cached = opts.useCache && aggregateCache.get(id)
     if (cached) {
-      const events = await getAllEventsFor<E>(provider, opts.stream, id, cached.position)
+      const events = await getAllEventsFor<E>(provider, opts.stream, id, cached.position, trx)
       if (!events.length) {
         return cached.aggregate
       }
@@ -54,7 +55,7 @@ export function createProvidedAggregate<E extends Event, A extends Aggregate>(
       return aggregate
     }
 
-    const events = await getAllEventsFor<E>(provider, opts.stream, id)
+    const events = await getAllEventsFor<E>(provider, opts.stream, id, undefined, trx)
 
     const next = { ...opts.aggregate(), aggregateId: id, version: 0 }
     const aggregate = events.reduce(toNextAggregate, next)
@@ -91,32 +92,32 @@ export function createPersistedAggregate<E extends Event, A extends Aggregate>(
    * 1. The version passed to createPersistedAggregate function matches the version on the persisted version
    * 2.
    */
-  async function getPersistedAggregate(id: string): Promise<A & BaseAggregate> {
+  async function getPersistedAggregate(id: string, trx?: Knex.Transaction): Promise<A & BaseAggregate> {
     const provider = await opts.provider
-    const lastEvent = await provider.getLastEventFor(opts.stream, id)
+    const lastEvent = await provider.getLastEventFor(opts.stream, id, trx)
     if (!lastEvent) {
       return { ...opts.aggregate(), aggregateId: id, version: 0 }
     }
 
     if (!lastEvent.event.__persisted) {
-      return getAggregate(id)
+      return getAggregate(id, trx)
     }
 
     const lastAgg: A & BaseAggregate = lastEvent.event.__persisted
 
     if (lastAgg.__pv !== opts.version) {
-      return getAggregate(id)
+      return getAggregate(id, trx)
     }
 
     return lastAgg
   }
 
-  async function getAggregate(id: string): Promise<A & BaseAggregate> {
+  async function getAggregate(id: string, trx?: Knex.Transaction): Promise<A & BaseAggregate> {
     const provider = await opts.provider
 
     const cached = opts.useCache && aggregateCache.get(id)
     if (cached) {
-      const events = await getAllEventsFor<E>(provider, opts.stream, id, cached.position)
+      const events = await getAllEventsFor<E>(provider, opts.stream, id, cached.position, trx)
       if (!events.length) {
         return cached.aggregate
       }
@@ -127,7 +128,7 @@ export function createPersistedAggregate<E extends Event, A extends Aggregate>(
       return aggregate
     }
 
-    const events = await getAllEventsFor<E>(provider, opts.stream, id)
+    const events = await getAllEventsFor<E>(provider, opts.stream, id, undefined, trx)
 
     const next = { ...opts.aggregate(), aggregateId: id, version: 0 }
     const aggregate = events.reduce(toNextAggregate, next)

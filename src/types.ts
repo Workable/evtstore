@@ -75,7 +75,8 @@ export type Provider<Evt extends Event> = {
   getEventsFor(
     stream: string,
     aggregateId: string,
-    fromPosition?: any
+    fromPosition?: any,
+    trx?: Knex.Transaction
   ): Promise<Array<StoreEvent<Evt>>>
   getLastEventFor(
     stream: string | string[],
@@ -182,7 +183,10 @@ export type AggregateStore = { [key: string]: StorableAggregate }
 export type ProvidedAggregate<E extends Event, A extends Aggregate, S extends string = string> = {
   stream: S
   provider: Provider<E> | Promise<Provider<E>>
-  getAggregate: (id: string) => Promise<A & BaseAggregate>
+  getAggregate: (
+    id: string,
+    trx?: Knex.Transaction
+  ) => Promise<A & BaseAggregate>
   toNextAggregate: (prev: A & BaseAggregate, event: StoreEvent<E>) => A & BaseAggregate
 
   version?: string
