@@ -1,5 +1,5 @@
 {
-  "name": "evtstore",
+  "name": "@workable/evtstore",
   "version": "12.0.5",
   "description": "Event Sourcing with Node.JS",
   "types": "index.d.ts",

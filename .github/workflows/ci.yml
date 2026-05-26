@@ -1,0 +1,44 @@
+name: CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+    name: Build and test on Node ${{ matrix.node }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node: ['20.x']
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Use Node ${{ matrix.node }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+
+      - name: Configure registry
+        run: |
+          npm config set @workable:registry $NODE_ARTIFACTORY_REGISTRY
+          npm config set ${NODE_ARTIFACTORY_REGISTRY#https:}:_password $ARTIFACTORY_NPM_AUTH
+          npm config set ${NODE_ARTIFACTORY_REGISTRY#https:}:username $ARTIFACTORY_USERNAME
+          npm config set ${NODE_ARTIFACTORY_REGISTRY#https:}:email not.valid@email.com
+        env:
+          NODE_ARTIFACTORY_REGISTRY: ${{ secrets.NODE_ARTIFACTORY_REGISTRY }}
+          ARTIFACTORY_NPM_AUTH: ${{ secrets.NODE_ARTIFACTORY_PASSWORD }}
+          ARTIFACTORY_USERNAME: _json_key_base64
+
+      - name: Install deps
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Test
+        run: npm test
