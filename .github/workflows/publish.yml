@@ -1,0 +1,60 @@
+name: Publish to GAR
+
+on:
+  workflow_dispatch:
+    inputs:
+      version_type:
+        description: 'Version bump type (patch, minor, major)'
+        required: true
+        default: 'patch'
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+
+jobs:
+  publish-npm:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Configure registry
+        run: |
+          npm config set @workable:registry $NODE_ARTIFACTORY_REGISTRY
+          npm config set ${NODE_ARTIFACTORY_REGISTRY#https:}:_password $ARTIFACTORY_NPM_AUTH
+          npm config set ${NODE_ARTIFACTORY_REGISTRY#https:}:username $ARTIFACTORY_USERNAME
+          npm config set ${NODE_ARTIFACTORY_REGISTRY#https:}:email not.valid@email.com
+        env:
+          NODE_ARTIFACTORY_REGISTRY: ${{ secrets.NODE_ARTIFACTORY_REGISTRY }}
+          ARTIFACTORY_NPM_AUTH: ${{ secrets.NODE_ARTIFACTORY_PASSWORD }}
+          ARTIFACTORY_USERNAME: _json_key_base64
+
+      - run: npm ci
+
+      - name: Bump version and push
+        env:
+          VERSION_TYPE: ${{ inputs.version_type }}
+          REMOTE_REPO: 'https://${{ secrets.SRE_TOOLS_GIT_ROBOT_TOKEN }}@github.com/${{ github.repository }}.git'
+        run: |
+          git config user.name "sre-tools-git-robot"
+          git config user.email "sre-tools-git-robot@workable.com"
+          git add -A
+          git commit -m "chore: clean up before version bump" || echo "No changes to commit"
+          npm version $VERSION_TYPE -m "chore: bump version to %s"
+          git push $REMOTE_REPO master --follow-tags
+
+      - name: Publish
+        run: npm publish --registry $NODE_ARTIFACTORY_REGISTRY
+        env:
+          NODE_ARTIFACTORY_REGISTRY: ${{ secrets.NODE_ARTIFACTORY_REGISTRY }}
+          ARTIFACTORY_NPM_AUTH: ${{ secrets.NODE_ARTIFACTORY_PASSWORD }}
+          ARTIFACTORY_USERNAME: _json_key_base64
